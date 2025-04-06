@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/devndam/truepeer/app/models"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -37,12 +36,15 @@ func ConnectDb() {
 		os.Exit(2)
 	}
 
-	log.Println("Connected to database successfully")
 	db.Logger = logger.Default.LogMode(logger.Info)
-	log.Println("Running Migrations")
 
 	// Add migrations
-	db.AutoMigrate(&models.User{})
+	// db.AutoMigrate(&models.User{})
 
 	Database = DbInstance{Db: db}
+}
+
+// GetDb returns the initialized database connection
+func GetDb() *gorm.DB {
+	return Database.Db
 }

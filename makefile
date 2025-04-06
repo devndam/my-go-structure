@@ -2,7 +2,7 @@ run:
 	go run main.go
 
 migrate:
-	go run tools/migrate.go
+	go run migrate.go
 
 test:
 	go test ./...
