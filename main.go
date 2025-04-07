@@ -27,6 +27,8 @@ func init() {
 	// These commands are implemented in the cmd folder
 	rootCmd.AddCommand(cmd.CreateModelCmd)
 	rootCmd.AddCommand(cmd.MigrateCmd)
+	rootCmd.AddCommand(cmd.CreateSeederCmd)
+	rootCmd.AddCommand(cmd.SeedCmd)
 }
 
 func main() {

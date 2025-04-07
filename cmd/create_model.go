@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -23,13 +23,17 @@ var CreateModelCmd = &cobra.Command{
 
 		// Generate file paths
 		modelFilePath := "app/models/" + modelName + ".go"
-		migrationFilePath := fmt.Sprintf("database/migrations/%s_create_%s_table.go", time.Now().Format("20060102150405"), modelName)
+		registryFilePath := "database/migration_registry.go"
+
+		// migrationFilePath := fmt.Sprintf("database/migrations/%s_create_%s_table.go", time.Now().Format("20060102150405"), modelName)
 
 		// Create the model file
 		createModelFile(modelFilePath, modelName)
 
 		// Create the migration file
-		createMigrationFile(migrationFilePath, modelName)
+		// createMigrationFile(migrationFilePath, modelName)
+
+		registerModelInMigrationList(registryFilePath, modelName)
 
 		fmt.Println("Model and migration created successfully!")
 	},
@@ -83,4 +87,44 @@ func Down(db *gorm.DB) error {
 }
 `
 	file.WriteString(content)
+}
+
+// Registers the model into the migration list
+func registerModelInMigrationList(filePath, modelName string) {
+	contentBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		// Create new file if it doesn't exist
+		initial := `package database
+
+		import "github.com/devndam/go-starter/app/models"
+
+		var MigratableModels = []interface{}{
+			&models.` + modelName + `{},
+		}
+		`
+		os.WriteFile(filePath, []byte(initial), 0644)
+		return
+	}
+
+	content := string(contentBytes)
+
+	modelRef := "&models." + modelName + "{}"
+	if strings.Contains(content, modelRef) {
+		fmt.Println("Model is already registered in migration registry.")
+		return
+	}
+
+	// Insert before the closing brace of the slice value (not type declaration)
+	// Look for: `} // end of slice`
+	insertIndex := strings.LastIndex(content, "}")
+	if insertIndex == -1 {
+		log.Fatalf("Could not find slice closing bracket in registry")
+	}
+
+	newContent := content[:insertIndex] + "\t" + modelRef + ",\n" + content[insertIndex:]
+
+	err = os.WriteFile(filePath, []byte(newContent), 0644)
+	if err != nil {
+		log.Fatalf("Could not update migration registry: %v", err)
+	}
 }
